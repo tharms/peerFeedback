@@ -1,4 +1,4 @@
-Modern Web Template
+Peer Review bases on Play Modern Web Template
 ===========
 
 **AngularJS - Scala - Play - Guice - PlayReactiveMongo**
