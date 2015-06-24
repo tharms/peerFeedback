@@ -66,7 +66,7 @@ class UsersIT extends Specification {
 
     "update a user by id" in {
       running(FakeApplication()) {
-        val request = FakeRequest.apply(PUT, "/userById/557f3a3e4468ffa85641ccf2").withJsonBody(Json.obj(
+        val request = FakeRequest.apply(PUT, "/userById/558479f3ff189a6c06a43dd2").withJsonBody(Json.obj(
           "firstName" -> "Mark",
           "lastName" -> "Twain",
           "age" -> 33,
@@ -75,7 +75,7 @@ class UsersIT extends Specification {
         response.isDefined mustEqual true
         val result = Await.result(response.get, timeout)
 
-        System.out.println("+++++++++++" + contentAsString(response.get))
+        println("+++++++++++" + contentAsString(response.get))
 
         result.header.status must equalTo(CREATED)
       }
@@ -91,7 +91,8 @@ class UsersIT extends Specification {
         val response = route(request)
         response.isDefined mustEqual true
         val result = Await.result(response.get, timeout)
-        result.header.status must equalTo(NOT_FOUND)
+        println("+++++++++++" + contentAsString(response.get))
+        result.header.status must equalTo(BAD_REQUEST)
       }
     }
 

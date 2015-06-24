@@ -35,6 +35,7 @@ class Users extends Controller with MongoController {
    */
   def collection: JSONCollection = db.collection[JSONCollection]("users")
 
+
   // ------------------------------------------ //
   // Using case classes + Json Writes and Reads //
   // ------------------------------------------ //
@@ -83,21 +84,32 @@ class Users extends Controller with MongoController {
     request =>
       request.body.validate[User].map {
         user =>
-          // find our user by id
-          val idSelector = Json.obj("_id" -> Json.obj("$oid" -> id))
+          val futureResult = {
+            val maybeOID: Try[BSONObjectID] = BSONObjectID.parse(id)
+            if (maybeOID.isSuccess) {
+              // find our user by id
+              val idSelector = Json.obj("_id" -> Json.obj("$oid" -> id))
 
-          val futureResult = Try {
-            collection.update(idSelector, user)
-          }.getOrElse( LastError(false, None, None, None, None, 0, false) )
-
+              collection.update(idSelector, user)
+            } else {
+              Future(LastError(false, None, Some(99), Some(s"Invalid id: $id"), None, 0, false))
+            }
+          }
 
           futureResult.map {
             case t => t.inError match {
-              case true => InternalServerError("%s".format(t))
-              case false => { t.n match {
-                case 1 => Created(s"User Updated")
-                case 0 => NotFound(s"No such user $id")
-              } }
+              case true => {
+                t.code match {
+                  case Some(99) => BadRequest("%s".format(t))
+                  case _ => InternalServerError("%s".format(t))
+                }
+              }
+              case false => {
+                t.n match {
+                  case 1 => Created(s"User Updated")
+                  case 0 => NotFound(s"No such user $id")
+                }
+              }
             }
           }
       }.getOrElse(Future.successful(BadRequest("invalid json")))
