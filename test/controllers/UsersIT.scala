@@ -83,7 +83,7 @@ class UsersIT extends Specification {
 
     "update a user by non existent id" in {
       running(FakeApplication()) {
-        val request = FakeRequest.apply(PUT, "/userById/55847c0aff189a6c06a43ddx").withJsonBody(Json.obj(
+        val request = FakeRequest.apply(PUT, "/userById/557f3a3e4468ffa85641ccfx").withJsonBody(Json.obj(
           "firstName" -> "Mark",
           "lastName" -> "Twain",
           "age" -> 33,
@@ -91,9 +91,6 @@ class UsersIT extends Specification {
         val response = route(request)
         response.isDefined mustEqual true
         val result = Await.result(response.get, timeout)
-
-        System.out.println("+++++++++++" + contentAsString(response.get))
-
         result.header.status must equalTo(NOT_FOUND)
       }
     }

@@ -1,9 +1,11 @@
 package controllers
 
+import java.util.NoSuchElementException
+
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.{BSONObjectID, BSONDocument}
-import reactivemongo.core.commands.GetLastError
+import reactivemongo.core.commands.{LastError, GetLastError}
 import scala.concurrent.Future
 import reactivemongo.api.Cursor
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -11,6 +13,8 @@ import org.slf4j.{LoggerFactory, Logger}
 import javax.inject.Singleton
 import play.api.mvc._
 import play.api.libs.json._
+
+import scala.util.Try
 
 /**
  * The Users controllers encapsulates the Rest endpoints and the interaction with the MongoDB, via ReactiveMongo
@@ -81,7 +85,12 @@ class Users extends Controller with MongoController {
         user =>
           // find our user by id
           val idSelector = Json.obj("_id" -> Json.obj("$oid" -> id))
-          val futureResult = collection.update(idSelector, user)
+
+          val futureResult = Try {
+            collection.update(idSelector, user)
+          }.getOrElse( LastError(false, None, None, None, None, 0, false) )
+
+
           futureResult.map {
             case t => t.inError match {
               case true => InternalServerError("%s".format(t))
@@ -97,12 +106,12 @@ class Users extends Controller with MongoController {
   def findUserById(id: String) = findUsers(Some(id))
 
   def findUsers(id: Option[String]) = Action.async {
-    val objectId = Json.obj("$oid" -> id.get)
+    //val objectId = Json.obj("$oid" -> id.get)
     // let's do our query
     val cursor: Cursor[User] =
       collection.
         // find all
-        find(id.foldLeft(Json.obj("active" -> true))((json, id) => json ++ Json.obj("_id" -> objectId))).
+        find(id.foldLeft(Json.obj("active" -> true))((json, _id) => json ++ Json.obj("_id" -> Json.obj("$oid" -> _id)))).
         // sort them by creation date
         sort(Json.obj("created" -> -1)).
         // perform the query and get a cursor of JsObject
