@@ -1,4 +1,6 @@
 package models
+
+import play.api.data.validation.ValidationError
 import play.api.libs.json._
 
 import reactivemongo.bson.BSONObjectID
@@ -10,6 +12,7 @@ case class User( _id: Option[BSONObjectID],
                  age: Int,
                  firstName: String,
                  lastName: String,
+                 email: String,
                  active: Boolean)
 case class Review( from: BSONObjectID,
                    to: BSONObjectID,
@@ -23,6 +26,8 @@ object JsonFormats {
   // Generates Writes and Reads for Feed and User thanks to Json Macros
   implicit val userFormat = Json.format[User]
   implicit val reviewFormat = Json.format[Review]
+
+
 /*
   implicit object BSONObjectIDFormat extends Format[BSONObjectID] {
     def writes(objectId: BSONObjectID): JsValue = {

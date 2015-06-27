@@ -40,7 +40,7 @@
                         {{ usr.age }}
                     </td>
                     <td>
-                        <a ng-href="/#/users/edit/{{usr.firstName}}/{{usr.lastName}}" class="btn btn-success pull-right" id="btn_user_update">Edit User</a>
+                        <a ng-href="/#/users/edit/{{ usr.email | encode }}" class="btn btn-success pull-right" id="btn_user_update">Edit User</a>
                     </td>
                 </tr>
                 <tr ng-hide="uc.users.length">
@@ -61,6 +61,7 @@
                         Json Data <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}"></i>
                     </accordion-heading>
                     <pre>{{ uc.users | json }}</pre>
+                    <pre>{{ uc.users[0].email | encode }}</pre>
                 </accordion-group>
             </accordion>
         </div>

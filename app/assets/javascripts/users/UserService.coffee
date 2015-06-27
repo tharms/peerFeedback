@@ -7,6 +7,23 @@ class UserService
     constructor: (@$log, @$http, @$q) ->
         @$log.debug "constructing UserService"
 
+
+    getUser: (id) ->
+      @$log.debug "listUsers()"
+      deferred = @$q.defer()
+
+      @$http.get("/users//#{id}")
+      .success((data, status, headers) =>
+        @$log.info("Successfully loaded Users - status #{status}")
+        deferred.resolve(data)
+      )
+      .error((data, status, headers) =>
+        @$log.error("Failed to load User - status #{status}")
+        deferred.reject(data)
+      )
+      deferred.promise
+
+
     listUsers: () ->
         @$log.debug "listUsers()"
         deferred = @$q.defer()
@@ -37,11 +54,11 @@ class UserService
             )
         deferred.promise
 
-    updateUser: (firstName, lastName, user) ->
+    updateUser: (id, user) ->
       @$log.debug "updateUser #{angular.toJson(user, true)}"
       deferred = @$q.defer()
 
-      @$http.put("/user/#{firstName}/#{lastName}", user)
+      @$http.put("/userById/#{id}", user)
       .success((data, status, headers) =>
               @$log.info("Successfully updated User - status #{status}")
               deferred.resolve(data)

@@ -4,6 +4,7 @@ import java.util.NoSuchElementException
 
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
+import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.bson.{BSONObjectID, BSONDocument}
 import reactivemongo.core.commands.{LastError, GetLastError}
 import scala.concurrent.Future
@@ -33,10 +34,18 @@ class Users extends Controller with MongoController {
    * the collection reference to avoid potential problems in development with
    * Play hot-reloading.
    */
-  def collection: JSONCollection = db.collection[JSONCollection]("users")
+  def collection: JSONCollection = {
+    val coll = db.collection[JSONCollection]("users")
+    coll.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true))
+    coll
+  }
 
 
   // ------------------------------------------ //
+
+
+
+
   // Using case classes + Json Writes and Reads //
   // ------------------------------------------ //
 
@@ -79,20 +88,37 @@ class Users extends Controller with MongoController {
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }
 
-  def updateUserById(id: String) = Action.async(parse.json) {
+
+  def deleteUserById(id: String) = Action.async {
+    val futureResult = collection.remove(Json.obj("email" -> id), firstMatchOnly = true)
+    futureResult.map {
+      case t => t.inError match {
+        case true => InternalServerError("%s".format(t))
+        case false => {
+          t.n match {
+            case 1 => Ok(s"$id deleted")
+            case 0 => NotFound(s"No such user $id")
+          }
+        }
+      }
+    }
+  }
+
+  def updateUserById(email: String) = Action.async(parse.json) {
     println(">>>>>>>>>>>>> updateUserById")
     request =>
       request.body.validate[User].map {
         user =>
           val futureResult = {
-            val maybeOID: Try[BSONObjectID] = BSONObjectID.parse(id)
-            if (maybeOID.isSuccess) {
-              // find our user by id
-              val idSelector = Json.obj("_id" -> Json.obj("$oid" -> id))
+            def isValid(email: String): Boolean =
+              if("""(?=[^\s]+)(?=(\w+)@([\w\.]+))""".r.findFirstIn(email) == None)false else true
 
+            if (isValid(email)) {
+              // find our user by id
+              val idSelector = Json.obj("email" -> email)
               collection.update(idSelector, user)
             } else {
-              Future(LastError(false, None, Some(99), Some(s"Invalid id: $id"), None, 0, false))
+              Future(LastError(false, None, Some(99), Some(s"Invalid email: $email"), None, 0, false))
             }
           }
 
@@ -107,7 +133,7 @@ class Users extends Controller with MongoController {
               case false => {
                 t.n match {
                   case 1 => Created(s"User Updated")
-                  case 0 => NotFound(s"No such user $id")
+                  case 0 => NotFound(s"No such user $email")
                 }
               }
             }
@@ -119,11 +145,13 @@ class Users extends Controller with MongoController {
 
   def findUsers(id: Option[String]) = Action.async {
     //val objectId = Json.obj("$oid" -> id.get)
+    logger.info(s"Finding user by $id")
+    println(s"Finding user by $id")
     // let's do our query
     val cursor: Cursor[User] =
       collection.
         // find all
-        find(id.foldLeft(Json.obj("active" -> true))((json, _id) => json ++ Json.obj("_id" -> Json.obj("$oid" -> _id)))).
+        find(id.foldLeft(Json.obj("active" -> true))((json, _id) => json ++ Json.obj("email" -> id))).
         // sort them by creation date
         sort(Json.obj("created" -> -1)).
         // perform the query and get a cursor of JsObject

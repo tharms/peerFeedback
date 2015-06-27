@@ -8,7 +8,7 @@ class UpdateUserCtrl
   updateUser: () ->
       @$log.debug "updateUser()"
       @user.active = true
-      @UserService.updateUser(@$routeParams.firstName, @$routeParams.lastName, @user)
+      @UserService.updateUser(encodeURIComponent(@$routeParams.id) , @user)
       .then(
           (data) =>
             @$log.debug "Promise returned #{data} User"
@@ -32,7 +32,7 @@ class UpdateUserCtrl
           # find a user with the name of firstName and lastName
           # as filter returns an array, get the first object in it, and return it
           # @user = (data.filter (user) -> user.firstName is firstName and user.lastName is lastName)[0]
-          data[0]
+          @user = data[0]
       ,
         (error) =>
           @$log.error "Unable to get Users: #{error}"

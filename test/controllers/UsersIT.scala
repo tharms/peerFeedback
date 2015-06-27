@@ -10,7 +10,7 @@ import play.api.libs.json._
 import play.api.test._
 import play.api.test.Helpers._
 import java.util.concurrent.TimeUnit
-
+import org.specs2.execute.AsResult
 
 /**
  * You can mock out a whole application including requests, plugins etc.
@@ -20,13 +20,25 @@ class UsersIT extends Specification {
 
   val timeout: FiniteDuration = FiniteDuration(5, TimeUnit.SECONDS)
 
+  def resetTheSystem() = {
+      val enc = java.net.URLEncoder.encode("jack@gmail.com", "UTF-8")
+      val request = FakeRequest(DELETE, s"/userById/$enc")
+      val response = route(request)
+      val result = Await.result(response.get, timeout)
+      println("+++++++++++" + contentAsString(response.get))
+      response.isDefined mustEqual true
+   }
+
   "Users" should {
 
     "insert a valid json" in {
       running(FakeApplication()) {
+        resetTheSystem()
+
         val request = FakeRequest.apply(POST, "/user").withJsonBody(Json.obj(
           "firstName" -> "Jack",
           "lastName" -> "London",
+          "email" -> "jack@gmail.com",
           "age" -> 39,
           "active" -> true))
         val response = route(request)
@@ -55,6 +67,7 @@ class UsersIT extends Specification {
         val request = FakeRequest.apply(PUT, "/user/Jack/London").withJsonBody(Json.obj(
           "firstName" -> "Jack",
           "lastName" -> "London",
+          "email" -> "jack@gmail.com",
           "age" -> 66,
           "active" -> true))
         val response = route(request)
@@ -66,9 +79,11 @@ class UsersIT extends Specification {
 
     "update a user by id" in {
       running(FakeApplication()) {
-        val request = FakeRequest.apply(PUT, "/userById/558479f3ff189a6c06a43dd2").withJsonBody(Json.obj(
+        val enc = java.net.URLEncoder.encode("jack@gmail.com", "UTF-8")
+        val request = FakeRequest.apply(PUT, s"/userById/$enc").withJsonBody(Json.obj(
           "firstName" -> "Mark",
           "lastName" -> "Twain",
+          "email" -> "jack@gmail.com",
           "age" -> 33,
           "active" -> true))
         val response = route(request)
@@ -83,7 +98,7 @@ class UsersIT extends Specification {
 
     "update a user by non existent id" in {
       running(FakeApplication()) {
-        val request = FakeRequest.apply(PUT, "/userById/557f3a3e4468ffa85641ccfx").withJsonBody(Json.obj(
+        val request = FakeRequest.apply(PUT, "/userById/blabla").withJsonBody(Json.obj(
           "firstName" -> "Mark",
           "lastName" -> "Twain",
           "age" -> 33,
@@ -109,7 +124,18 @@ class UsersIT extends Specification {
         result.header.status mustEqual BAD_REQUEST
       }
     }
-
+/*
+    "delete a user by id" in {
+      running(FakeApplication()) {
+        val enc = java.net.URLEncoder.encode("jack@gmail.com", "UTF-8")
+        val request = FakeRequest(DELETE, s"/userById/$enc")
+        val response = route(request)
+        val result = Await.result(response.get, timeout)
+        println("+++++++++++" + contentAsString(response.get))
+        response.isDefined mustEqual true
+      }
+    }
+ */
     "find users" in {
       running(FakeApplication()) {
         val request = FakeRequest(GET, "/users")
@@ -123,7 +149,8 @@ class UsersIT extends Specification {
 
     "find specific user" in {
       running(FakeApplication()) {
-        val request = FakeRequest(GET, "/userById/55847c0aff189a6c06a43dd7")
+        val enc = java.net.URLEncoder.encode("jack@gmail.com", "UTF-8")
+        val request = FakeRequest(GET, s"/userById/$enc")
 
         val response = route(request)
         response.isDefined mustEqual true

@@ -9,6 +9,7 @@ GET     /                           @controllers.Application.index
 GET     /randomUUID                 @controllers.Application.randomUUID
 
 # User management API
+DELETE  /userById/:id               @controllers.Users.deleteUserById(id: String)
 GET     /userById/:id               @controllers.Users.findUserById(id: String)
 GET     /users                      @controllers.Users.findUsers(id: Option[String])
 POST    /user                       @controllers.Users.createUser

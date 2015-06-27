@@ -12,6 +12,7 @@ dependencies = [
 
 app = angular.module('myApp', dependencies)
 
+
 angular.module('myApp.routeConfig', ['ngRoute'])
     .config ($routeProvider) ->
         $routeProvider
@@ -21,7 +22,7 @@ angular.module('myApp.routeConfig', ['ngRoute'])
             .when('/users/create', {
                 templateUrl: '/assets/partials/create.html'
             })
-            .when('/users/edit/:firstName/:lastName', {
+            .when('/users/edit/:id', {
                 templateUrl: '/assets/partials/update.html'
             })
             .otherwise({redirectTo: '/'})
@@ -37,3 +38,7 @@ angular.module('myApp.routeConfig', ['ngRoute'])
 @modelsModule = angular.module('myApp.models', [])
 @directivesModule = angular.module('myApp.directives', [])
 @filtersModule = angular.module('myApp.filters', [])
+
+app.filter 'encode', ->
+  (text) ->
+    return encodeURIComponent(text)
