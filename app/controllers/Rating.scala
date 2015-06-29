@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject.Singleton
 
+import dao.CompetencyDAO
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
@@ -18,9 +19,9 @@ import scala.concurrent.Future
  * @see https://github.com/ReactiveMongo/Play-ReactiveMongo
  */
 @Singleton
-class Reviews extends Controller with MongoController {
+class Rating extends Controller with MongoController {
 
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[Reviews])
+  private final val logger: Logger = LoggerFactory.getLogger(classOf[Rating])
 
   /*
    * Get a JSONCollection (a Collection implementation that is designed to work
@@ -29,31 +30,29 @@ class Reviews extends Controller with MongoController {
    * the collection reference to avoid potential problems in development with
    * Play hot-reloading.
    */
-  def collection: JSONCollection = db.collection[JSONCollection]("reviews")
+  def collection: JSONCollection = db.collection[JSONCollection]("competency")
 
   // ------------------------------------------ //
   // Using case classes + Json Writes and Reads //
   // ------------------------------------------ //
 
-  import models.JsonFormats._
-  import models._
+  import dao.models.JsonFormats._
+  import dao.models._
 
-  def createReview = Action.async(parse.json) {
+  def createCompetency = Action.async(parse.json) {
     request =>
-    /*
-     * request.body is a JsValue.
-     * There is an implicit Writes that turns this JsValue as a JsObject,
-     * so you can call insert() with this JsValue.
-     * (insert() takes a JsObject as parameter, or anything that can be
-     * turned into a JsObject using a Writes.)
-     */
-      request.body.validate[Review].map {
-        review =>
-        // `user` is an instance of the case class `models.User`
-          collection.insert(review).map {
+      request.body.validate[Competency].map {
+        competency =>
+          /*
+          collection.insert(competency).map {
             lastError =>
               logger.debug(s"Successfully inserted with LastError: $lastError")
               Created(s"Review Created")
+          }
+          */
+          CompetencyDAO.create(competency).map {
+            case Left(ex) => InternalServerError("%s".format(ex.message))
+            case Right(c) => Created(s"$c")
           }
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }

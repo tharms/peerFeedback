@@ -1,7 +1,7 @@
 package controllers
 
-import java.util.NoSuchElementException
-
+import dao.UserDAO
+import dao.models.User
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
@@ -15,7 +15,6 @@ import javax.inject.Singleton
 import play.api.mvc._
 import play.api.libs.json._
 
-import scala.util.Try
 
 /**
  * The Users controllers encapsulates the Rest endpoints and the interaction with the MongoDB, via ReactiveMongo
@@ -49,8 +48,11 @@ class Users extends Controller with MongoController {
   // Using case classes + Json Writes and Reads //
   // ------------------------------------------ //
 
-  import models._
-  import models.JsonFormats._
+  import dao.models._
+  import dao.models.JsonFormats._
+
+  def isValidEmail(email: String): Boolean =
+    if("""(?=[^\s]+)(?=(\w+)@([\w\.]+))""".r.findFirstIn(email) == None)false else true
 
   def createUser = Action.async(parse.json) {
     request =>
@@ -64,10 +66,24 @@ class Users extends Controller with MongoController {
       request.body.validate[User].map {
         user =>
           // `user` is an instance of the case class `models.User`
-          collection.insert(user).map {
-            lastError =>
-              logger.debug(s"Successfully inserted with LastError: $lastError")
-              Created(s"User Created")
+          val futureResult = {
+            if (isValidEmail(user.email)) {
+              // find our user by id
+              collection.insert(user)
+            } else {
+              Future(LastError(false, None, Some(99), Some(s"Invalid email: $user.email"), None, 0, false))
+            }
+          }
+          futureResult.map {
+            case t => t.inError match {
+              case true => {
+                t.code match {
+                  case Some(99) => BadRequest("%s".format(t))
+                  case _ => InternalServerError("%s".format(t))
+                }
+              }
+              case false => Created("User inserted")
+            }
           }
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }
@@ -110,10 +126,7 @@ class Users extends Controller with MongoController {
       request.body.validate[User].map {
         user =>
           val futureResult = {
-            def isValid(email: String): Boolean =
-              if("""(?=[^\s]+)(?=(\w+)@([\w\.]+))""".r.findFirstIn(email) == None)false else true
-
-            if (isValid(email)) {
+           if (isValidEmail(email) && isValidEmail(user.email)) {
               // find our user by id
               val idSelector = Json.obj("email" -> email)
               collection.update(idSelector, user)
@@ -141,7 +154,9 @@ class Users extends Controller with MongoController {
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }
 
-  def findUserById(id: String) = findUsers(Some(id))
+  def findUserByEmail(email: String) = findUsers(Some(email))
+
+
 
   def findUsers(id: Option[String]) = Action.async {
     //val objectId = Json.obj("$oid" -> id.get)

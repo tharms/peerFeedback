@@ -24,7 +24,7 @@ class UpdateUserCtrl
       id = @$routeParams.id
       @$log.debug "findUser route params: #{id}"
 
-      @UserService.listUsers(@$routeParams.id)
+      @UserService.getUser(encodeURIComponent(@$routeParams.id))
       .then(
         (data) =>
           @$log.debug "Promise returned #{data.length} Users"

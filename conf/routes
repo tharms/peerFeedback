@@ -10,13 +10,12 @@ GET     /randomUUID                 @controllers.Application.randomUUID
 
 # User management API
 DELETE  /userById/:id               @controllers.Users.deleteUserById(id: String)
-GET     /userById/:id               @controllers.Users.findUserById(id: String)
+GET     /userById/:email            @controllers.Users.findUserByEmail(email: String)
 GET     /users                      @controllers.Users.findUsers(id: Option[String])
 POST    /user                       @controllers.Users.createUser
 PUT     /userById/:id               @controllers.Users.updateUserById(id: String)
 PUT     /user/:firstName/:lastName  @controllers.Users.updateUser(firstName: String, lastName: String)
-
-POST    /review                     @controllers.Reviews.createReview
+POST    /competency                 @controllers.Rating.createCompetency
 
 
 # Map static resources from the /public folder to the /assets URL path

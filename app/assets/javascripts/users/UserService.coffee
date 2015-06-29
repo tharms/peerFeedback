@@ -12,7 +12,7 @@ class UserService
       @$log.debug "listUsers()"
       deferred = @$q.defer()
 
-      @$http.get("/users//#{id}")
+      @$http.get("/userById/#{id}")
       .success((data, status, headers) =>
         @$log.info("Successfully loaded Users - status #{status}")
         deferred.resolve(data)
