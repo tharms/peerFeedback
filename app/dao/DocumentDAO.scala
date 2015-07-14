@@ -20,7 +20,7 @@ import dao.models.TemporalModel
  */
 trait DocumentDAO[T <: TemporalModel] extends BaseDAO {
 
-	lazy val collection = db.collection[JSONCollection](collectionName)
+	def collection = db.collection[JSONCollection](collectionName)
 
 	def insert(document: T)(implicit writer: Writes[T]): Future[Either[ServiceException, T]] = {
 		document._id = Some(BSONObjectID.generate)
@@ -43,7 +43,9 @@ trait DocumentDAO[T <: TemporalModel] extends BaseDAO {
 
 	def findOne(query: JsObject)(implicit reader: Reads[T]): Future[Option[T]] = {
 		Logger.debug(s"Finding one: [collection=$collectionName, query=$query]")
-		collection.find(query).one[T]
+		val res = collection.find(query)
+    Logger.debug(s"Found $res")
+    res.one[T]
 	}
 
 	def update(id: String, document: T)(implicit writer: Writes[T]): Future[Either[ServiceException, T]] = {

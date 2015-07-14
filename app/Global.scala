@@ -1,4 +1,6 @@
 import com.google.inject.{Guice, AbstractModule}
+import dao.models.Competency
+import dao.{DocumentDAO, CompetencyDAO}
 import play.api.GlobalSettings
 import services.{SimpleUUIDGenerator, UUIDGenerator}
 
@@ -13,6 +15,7 @@ object Global extends GlobalSettings {
   val injector = Guice.createInjector(new AbstractModule {
     protected def configure() {
       bind(classOf[UUIDGenerator]).to(classOf[SimpleUUIDGenerator])
+      //bind(classOf[DocumentDAO[Competency]]).to(classOf[CompetencyDAO])
     }
   })
 

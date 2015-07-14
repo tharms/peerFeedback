@@ -14,7 +14,7 @@ import dao.helpers.ContextHelper
  */
 trait MongoHelper extends ContextHelper{
 
-	lazy val db = ReactiveMongoPlugin.db
+	def db = ReactiveMongoPlugin.db
 
 }
 

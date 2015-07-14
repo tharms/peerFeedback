@@ -20,7 +20,7 @@ case class User(        override var _id: Option[BSONObjectID] = None,
 case class Competency(  override var _id: Option[BSONObjectID] = None,
                         override var created: Option[DateTime] = None,
                         override var updated: Option[DateTime] = None,
-                        employee: String,
+                        employeeMail: String,
                         name: String,
                         description: String,
                         assessments: Seq[BSONObjectID]) extends TemporalModel

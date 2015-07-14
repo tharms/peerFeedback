@@ -1,8 +1,10 @@
 package controllers
 
-import javax.inject.Singleton
+import javax.inject.{Inject, Singleton}
 
-import dao.CompetencyDAO
+import dao.exceptions.{ResourceNotFoundException, ServiceException}
+import dao.models.Competency
+import dao.{DocumentDAO, CompetencyDAO}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
@@ -10,6 +12,7 @@ import play.api.mvc._
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.api.Cursor
+import services.UUIDGenerator
 
 import scala.concurrent.Future
 
@@ -19,18 +22,10 @@ import scala.concurrent.Future
  * @see https://github.com/ReactiveMongo/Play-ReactiveMongo
  */
 @Singleton
-class Rating extends Controller with MongoController {
+class Rating @Inject() (competencyDAO: CompetencyDAO) extends Controller with MongoController {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[Rating])
 
-  /*
-   * Get a JSONCollection (a Collection implementation that is designed to work
-   * with JsObject, Reads and Writes.)
-   * Note that the `collection` is not a `val`, but a `def`. We do _not_ store
-   * the collection reference to avoid potential problems in development with
-   * Play hot-reloading.
-   */
-  def collection: JSONCollection = db.collection[JSONCollection]("competency")
 
   // ------------------------------------------ //
   // Using case classes + Json Writes and Reads //
@@ -43,56 +38,51 @@ class Rating extends Controller with MongoController {
     request =>
       request.body.validate[Competency].map {
         competency =>
-          /*
-          collection.insert(competency).map {
-            lastError =>
-              logger.debug(s"Successfully inserted with LastError: $lastError")
-              Created(s"Review Created")
-          }
-          */
-          CompetencyDAO.create(competency).map {
+          competencyDAO.insert(competency).map {
             case Left(ex) => InternalServerError("%s".format(ex.message))
             case Right(c) => Created(s"$c")
           }
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }
 
-  def updateReview(firstName: String, lastName: String) = Action.async(parse.json) {
+  def getCompetency(email: String) = Action.async {
+    competencyDAO.findOne(Json.obj("employeeMail" -> email)) map {
+      case Some(c) => Ok(s"$c")
+      case None => NotFound(email)
+    }
+  }
+
+  def updateCompetency(email: String) = Action.async(parse.json) {
     request =>
-      request.body.validate[User].map {
-        user =>
-          // find our user by first name and last name
-          val nameSelector = Json.obj("firstName" -> firstName, "lastName" -> lastName)
-          collection.update(nameSelector, user).map {
-            lastError =>
-              logger.debug(s"Successfully updated with LastError: $lastError")
-              Created(s"User Updated")
+      request.body.validate[Competency].map {
+        competency =>
+          upsert(email, competency).map {
+            case Left(ex) => InternalServerError("%s".format(ex.message))
+            case Right(c) => Ok(s"$c")
           }
       }.getOrElse(Future.successful(BadRequest("invalid json")))
   }
 
-  def findReview = Action.async {
-    // let's do our query
-    val cursor: Cursor[User] = collection.
-      // find all
-      find(Json.obj("active" -> true)).
-      // sort them by creation date
-      sort(Json.obj("created" -> -1)).
-      // perform the query and get a cursor of JsObject
-      cursor[User]
-
-    // gather all the JsObjects in a list
-    val futureUsersList: Future[List[User]] = cursor.collect[List]()
-
-    // transform the list into a JsArray
-    val futurePersonsJsonArray: Future[JsArray] = futureUsersList.map { users =>
-      Json.arr(users)
-    }
-    // everything's ok! Let's reply with the array
-    futurePersonsJsonArray.map {
-      users =>
-        Ok(users(0))
+  def deleteCompetency(email: String) = Action.async {
+    delete(email).map {
+      case Left(ex) => InternalServerError("%s".format(ex.message))
+      case Right(c) => Ok(s"$c")
     }
   }
+
+  def upsert(email: String, competency: Competency): Future[Either[ServiceException, Competency]] = {
+    competencyDAO.findOne(Json.obj("employeeMail" -> email)) flatMap  {
+      case Some(comp) => competencyDAO.update(comp._id.get.stringify, competency)
+      case None => competencyDAO.insert(competency)
+    }
+  }
+
+  def delete(email: String): Future[Either[ServiceException, Boolean]] = {
+    competencyDAO.findOne(Json.obj("employeeMail" -> email)) flatMap  {
+      case Some(comp) => competencyDAO.remove(comp._id.get.stringify)
+      case None => Future.successful(Left(ResourceNotFoundException(email)))
+    }
+  }
+
 
 }

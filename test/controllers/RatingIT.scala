@@ -37,26 +37,70 @@ class RatingIT extends Specification {
     val response = route(request)
     response.isDefined mustEqual true
     val result = Await.result(response.get, timeout)
+     println("+++++++++++" + contentAsString(response.get))
     result.header.status must equalTo(CREATED)
   }
 
-  "Users" should {
+  "Users" should  {
+
     "Create a new Competency" in {
       running(FakeApplication()) {
         resetTheSystem()
 
         val request = FakeRequest(POST, "/competency").withJsonBody(Json.obj(
-        "employee" ->  "mark@gmail.com",
-        "name" -> "Scala skills",
-        "description" -> "Scala language and tools",
-        "assessments" -> Json.arr()
-        ) )
+          "employeeMail" -> "mark@gmail.com",
+          "name" -> "Scala skills Updated",
+          "description" -> "Scala language and tools updated",
+          "assessments" -> Json.arr()
+        ))
         val response = route(request)
         response.isDefined mustEqual true
         val result = Await.result(response.get, timeout)
+        println("+++++++++++" + contentAsString(response.get))
         result.header.status must equalTo(CREATED)
       }
     }
-  }
 
+    "Find a competency" in {
+      running(FakeApplication()) {
+        val enc = java.net.URLEncoder.encode("mark@gmail.com", "UTF-8")
+        val request = FakeRequest(GET, s"/competency/$enc")
+        val response = route(request)
+        response.isDefined mustEqual true
+        val result = Await.result(response.get, timeout)
+        println("+++++++++++" + contentAsString(response.get))
+        result.header.status must equalTo(OK)
+      }
+    }
+
+
+    "Update a competency" in {
+      running(FakeApplication()) {
+        val enc = java.net.URLEncoder.encode("mark@gmail.com", "UTF-8")
+        val request = FakeRequest(PUT, s"/competency/$enc").withJsonBody(Json.obj(
+          "employeeMail" -> "mark@gmail.com",
+          "name" -> "Scala skills",
+          "description" -> "Scala language and tools",
+          "assessments" -> Json.arr()
+        ))
+        val response = route(request)
+        response.isDefined mustEqual true
+        val result = Await.result(response.get, timeout)
+        println("+++++++++++" + contentAsString(response.get))
+        result.header.status must equalTo(OK)
+      }
+    }
+
+    "Delete a competency" in {
+      running(FakeApplication()) {
+        val enc = java.net.URLEncoder.encode("mark@gmail.com", "UTF-8")
+        val request = FakeRequest(DELETE, s"/competency/$enc")
+        val response = route(request)
+        val result = Await.result(response.get, timeout)
+        println("+++++++++++" + contentAsString(response.get))
+        result.header.status must equalTo(OK)
+      }
+    }
+
+  }
 }

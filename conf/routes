@@ -16,6 +16,9 @@ POST    /user                       @controllers.Users.createUser
 PUT     /userById/:id               @controllers.Users.updateUserById(id: String)
 PUT     /user/:firstName/:lastName  @controllers.Users.updateUser(firstName: String, lastName: String)
 POST    /competency                 @controllers.Rating.createCompetency
+PUT     /competency/:email          @controllers.Rating.updateCompetency(email: String)
+GET     /competency/:email          @controllers.Rating.getCompetency(email: String)
+DELETE  /competency/:email          @controllers.Rating.deleteCompetency(email: String)
 
 
 # Map static resources from the /public folder to the /assets URL path
