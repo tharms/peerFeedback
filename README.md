@@ -1,4 +1,4 @@
-Peer Review bases on Play Modern Web Template
+Peer Review 
 ===========
 
 Application that allows a definition of skills and competencies of a person and lets her match with others.
