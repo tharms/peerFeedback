@@ -1,6 +1,8 @@
 Peer Review bases on Play Modern Web Template
 ===========
 
+Application that allows a definition of skills and competencies of a person and lets her match with others.
+
 **AngularJS - Scala - Play - Guice - PlayReactiveMongo**
 
 A full application stack for a Modern Web application, lets review the components:
