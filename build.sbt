@@ -7,6 +7,7 @@ scalaVersion := "2.11.4"
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+resolvers += Resolver.url("Typesafe Ivy releases", url("https://repo.typesafe.com/typesafe/ivy-releases"))(Resolver.ivyStylePatterns)
 
 libraryDependencies ++= Seq(
   "com.google.inject" % "guice" % "3.0",

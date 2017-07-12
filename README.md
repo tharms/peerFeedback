@@ -36,15 +36,15 @@ Your development environment will require:
 Once the prerequisites have been installed, you will be able to execute the following from a terminal.
 
 ```
-../modern-web-template >  sbt run
+../peerReview >  sbt run
 ```
 
 This should fetch all the dependencies and start a Web Server listening on *localhost:9000*
 
 ```
-[info] Loading project definition from ../modern-web-template/project
-[info] Set current project to modern-web-template
-[info] Updating modern-web-template...
+[info] Loading project definition from ../peerReview/project
+[info] Set current project to peerReview
+[info] Updating peerReview...
 ...
 [info] Done updating.
 
